@@ -4,7 +4,9 @@ import string
 
 from CaptchaDataset import CaptchaDataset
 from Cnn import CnnModel
-from ResNet import ResNetModel
+from ResNet import ResNetModel as ResNet50Model
+from ResNet2 import ResNetModel as ResNet34Model
+
 from train_valid import train, valid
 
 
@@ -18,7 +20,8 @@ PIC_WIDTH, PIC_HEIGHT, CAPTCHA_STR_LEN, CAPTCHA_CHAR_LEN = 192, 64, 4, len(CHAR_
 BATCH_SIZE = 128
 
 # model = CnnModel(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
-model = ResNetModel(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
+# model = ResNet50Model(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
+model = ResNet34Model(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
 
 
 model = model.cuda()

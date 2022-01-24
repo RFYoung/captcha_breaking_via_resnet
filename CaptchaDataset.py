@@ -2,8 +2,8 @@ from xml.dom.minidom import CharacterData
 import torch, random
 from torchvision.transforms.functional import to_tensor
 from torch.utils.data.dataset import Dataset
-# from captcha.image import ImageCaptcha
-from ImageCaptchaEnhanced import ImageCaptcha
+# from ImageCaptchaEnhanced import ImageCaptcha
+from captcha.image import ImageCaptcha
 
 
 class CaptchaDataset(Dataset):
