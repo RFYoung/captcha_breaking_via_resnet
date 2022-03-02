@@ -2,6 +2,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+import torchvision
 import string
 
 from CaptchaDataset import CaptchaDataset
@@ -60,8 +61,33 @@ test_epochs = 10
 test(model, test_epochs, test_loader, writer, log_file)
 
     
+def decode(sequence):
+    return ''.join([CHAR_SET[x][0] for x in sequence])
+
+
+model.eval()
+final_dataset = CaptchaDataset(CHAR_SET, 1, PIC_WIDTH, PIC_HEIGHT, CAPTCHA_STR_LEN)
+for _ in range(10):
+    with torch.no_grad():
+        do = True
+        while do:
+            image, target = final_dataset[0]
+            target = target.cpu().numpy()
+            
+            print('true:', decode(target), file=log_file)
+            output = model(image.unsqueeze(0).cuda())
+            output_argmax = output.detach().argmax(dim=-1).cpu().numpy()
+            print('pred:', decode(output_argmax[0]), file=log_file)
+            do = (decode(target) == decode(output_argmax[0]))
+
+
+    im = torchvision.transforms.ToPILImage()(image)
+    im.save(STORE_DIRECTORY + "pic/" +decode(target) + "_" + decode(output_argmax[0]) + ".png")
+    
+
 inputs = torch.zeros((1,3, PIC_HEIGHT, PIC_WIDTH)).cuda()
 out = model(inputs)
+
 
 
 log_file.close()
