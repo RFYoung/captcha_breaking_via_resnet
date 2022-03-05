@@ -88,6 +88,10 @@ for _ in range(10):
 inputs = torch.zeros((1,3, PIC_HEIGHT, PIC_WIDTH)).cuda()
 out = model(inputs)
 
+# save the model
+scripted_module = torch.jit.trace(model.eval(), (inputs))
+scripted_module.save(STORE_DIRECTORY+"Module.pt")
+
 
 
 log_file.close()
