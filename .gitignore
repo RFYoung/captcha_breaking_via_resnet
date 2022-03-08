@@ -1,4 +1,6 @@
 venv/
-__pycache__/
+test/
 .vscode/
-
+__pycache__/
+log/*
+font/*
