@@ -2,7 +2,7 @@ from xml.dom.minidom import CharacterData
 import torch, random
 from torchvision.transforms.functional import to_tensor
 from torch.utils.data.dataset import Dataset
-from ImageCaptchaEnhanced import ImageCaptcha
+from ImageCaptchaEnhanced import ImageCaptchaEnhanced
 
 
 class CaptchaDataset(Dataset):
@@ -15,7 +15,7 @@ class CaptchaDataset(Dataset):
         self.height = height
         self.label_length = label_length
         self.n_class = len(characters)
-        self.generator = ImageCaptcha(width=width, height=height)
+        self.generator = ImageCaptchaEnhanced(width=width, height=height)
 
     def __len__(self):
         return self.length

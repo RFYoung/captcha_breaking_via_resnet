@@ -26,7 +26,9 @@ BATCH_SIZE = 128
 # model = ResNet50Model(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
 model = ResNet34Model(CAPTCHA_CHAR_LEN, CAPTCHA_STR_LEN, input_shape=(3, PIC_HEIGHT, PIC_WIDTH))
 
-STORE_DIRECTORY = "log/resnet2_2/"
+STORE_DIRECTORY = "log/cnn/"
+STORE_DIRECTORY = "log/resnet34/"
+STORE_DIRECTORY = "log/resnet50/"
 
 os.makedirs(STORE_DIRECTORY+"pic/", exist_ok=False)
 

@@ -53,7 +53,7 @@ class _Captcha(object):
         return im.save(output, format=format)
 
 
-class ImageCaptcha(_Captcha):
+class ImageCaptchaEnhanced(_Captcha):
     """Create an image CAPTCHA.
 
     Many of the codes are borrowed from wheezy.captcha, with a modification
