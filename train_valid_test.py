@@ -43,6 +43,7 @@ def train(model:torch.nn.Module, optimizer:torch.optim.Optimizer, epoch:int, dat
         for batch_index, (data, target) in enumerate(pybar):
             data, target = data.cuda(), target.cuda()
 
+            # set seed of pseudorandom generator
             random.seed(os.urandom(32))
 
             output = model(data)
@@ -51,6 +52,7 @@ def train(model:torch.nn.Module, optimizer:torch.optim.Optimizer, epoch:int, dat
             fl_target = torch.flatten(target,start_dim=0,end_dim=1)
             loss = Func.cross_entropy(fl_output, fl_target)
 
+            # do backpropagation and optimise parameters
             loss.backward()
             optimizer.step()
 
@@ -60,6 +62,7 @@ def train(model:torch.nn.Module, optimizer:torch.optim.Optimizer, epoch:int, dat
             running_loss += current_loss
             running_acc += current_acc 
 
+            # write the results per 20 training to tensorboard
             if batch_index % 20 == 19:
                 x_value = epoch * len(dataloader) + batch_index
                 boardwriter.add_scalar('training loss', running_loss / 20, x_value)
@@ -91,6 +94,7 @@ def valid(model:torch.nn.Module, epoch:int, dataloader:DataLoader, boardwriter:S
         for batch_index, (data, target) in enumerate(pybar):
             data, target = data.cuda(), target.cuda()
 
+            # set seed of pseudorandom generator
             random.seed(os.urandom(32))
 
             output = model(data)
@@ -98,6 +102,7 @@ def valid(model:torch.nn.Module, epoch:int, dataloader:DataLoader, boardwriter:S
             fl_target = torch.flatten(target,start_dim=0,end_dim=1)
             loss = Func.cross_entropy(fl_output, fl_target)
 
+            # do backpropagation and optimise parameters
             loss = loss.item()
             acc = calc_acc(target, output)
 
@@ -109,6 +114,7 @@ def valid(model:torch.nn.Module, epoch:int, dataloader:DataLoader, boardwriter:S
 
             pybar.set_description(f'Valid : {epoch} Loss: {loss_mean:.4f} Acc: {acc_mean:.4f} ')
 
+            # write validation result to tensorboard
         boardwriter.add_scalar('valid loss', loss_mean, epoch)
         boardwriter.add_scalar('valid acc', acc_mean, epoch)
         
@@ -134,6 +140,7 @@ def test(model:torch.nn.Module, total_test_num:int, dataloader:DataLoader, board
             for batch_index, (data, target) in enumerate(pybar):
                 data, target = data.cuda(), target.cuda()
 
+                # set seed of pseudorandom generator
                 random.seed(os.urandom(32))
 
                 output = model(data)
@@ -145,6 +152,7 @@ def test(model:torch.nn.Module, total_test_num:int, dataloader:DataLoader, board
                 loss = loss.item()
                 acc = calc_acc(target, output)
 
+                # do backpropagation and optimise parameters
                 loss_sum += loss
                 acc_sum += acc
 
@@ -153,6 +161,7 @@ def test(model:torch.nn.Module, total_test_num:int, dataloader:DataLoader, board
 
                 pybar.set_description(f'Test : {test_index} Loss: {loss_mean:.4f} Acc: {acc_mean:.4f} ')
 
+            # write test result to tensorboard
             boardwriter.add_scalar('test loss', loss_sum / len(dataloader), test_index)
             total_lost_mean += loss_mean
             boardwriter.add_scalar('test acc', acc_sum / len(dataloader), test_index)

@@ -6,9 +6,12 @@ from PIL import ImageFilter
 from PIL.ImageDraw import Draw
 from PIL.ImageFont import truetype
 
+import numpy as np
+from scipy.ndimage import map_coordinates
+
+
 FONT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'font')
 DEFAULT_FONTS = (
-
     os.path.join(FONT_DIR, 'FiraCode-Bold.ttf'),
     os.path.join(FONT_DIR, 'FiraCode-Medium.ttf'),
     os.path.join(FONT_DIR, 'iosevka-ss17-bold.ttf'),
@@ -21,6 +24,12 @@ FONT_SIZES = (55, 58, 62, 66, 70)
 
 
 def random_color(start, end, opacity=None):
+    """
+    Generate random color in RGB
+
+    start : the start range of RGB
+    end : the end range of RGB
+    """
     red = random.randint(start, end)
     green = random.randint(start, end)
     blue = random.randint(start, end)
@@ -31,10 +40,11 @@ def random_color(start, end, opacity=None):
 
 class _Captcha(object):
     def generate(self, chars, format='png'):
-        """Generate an Image Captcha of the given characters.
+        """
+        Generate an Image Captcha of the given characters.
 
-        :param chars: text to be generated.
-        :param format: image file format
+        chars: text to be generated.
+        format: image file format
         """
         im = self.generate_image(chars)
         out = BytesIO()
@@ -43,11 +53,12 @@ class _Captcha(object):
         return out
 
     def write(self, chars, output, format='png'):
-        """Generate and write an image CAPTCHA data to the output.
+        """
+        Generate and write an image CAPTCHA data to the output.
 
-        :param chars: text to be generated.
-        :param output: output destination.
-        :param format: image file format
+        chars: text to be generated.
+        output: output destination.
+        format: image file format
         """
         im = self.generate_image(chars)
         return im.save(output, format=format)
@@ -68,10 +79,10 @@ class ImageCaptchaEnhanced(_Captcha):
     the fonts are loaded into your memory, so keep them a lot, but not too
     many.
 
-    :param width: The width of the CAPTCHA image.
-    :param height: The height of the CAPTCHA image.
-    :param fonts: Fonts to be used to generate CAPTCHA images.
-    :param font_sizes: Random choose a font size from this parameters.
+    width: The width of the CAPTCHA image.
+    height: The height of the CAPTCHA image.
+    fonts: Fonts to be used to generate CAPTCHA images.
+    font_sizes: Random choose a font size from this parameters.
     """
     def __init__(self, width=128, height=64, fonts=None, font_sizes=None):
         self._width = width
@@ -94,6 +105,9 @@ class ImageCaptchaEnhanced(_Captcha):
 
     @staticmethod
     def create_noise_curve(image:Image, color,width=3,number=3):
+        """
+        create noise curve on the image
+        """
         w, h = image.size    
         
         for _ in range(0,number):
@@ -116,6 +130,9 @@ class ImageCaptchaEnhanced(_Captcha):
 
     @staticmethod
     def create_noise_dots(image, color, width=2, number=60):
+        """
+        create noise dots on the image
+        """
         draw = Draw(image)
         w, h = image.size
         while number:
@@ -138,6 +155,9 @@ class ImageCaptchaEnhanced(_Captcha):
         draw = Draw(image)
 
         def _draw_character(c):
+            """
+            Draw individual characters
+            """
             font = random.choice(self.truefonts)
             _, _, w, h = draw.textbbox(xy=(0,0), text=c, font=font, anchor='lt')
             im = Image.new('1', (w, h))
@@ -145,7 +165,7 @@ class ImageCaptchaEnhanced(_Captcha):
 
             # rotate
             im = im.crop(im.getbbox())
-            im = im.rotate(random.uniform(-30, 30), Image.NEAREST, expand=1)
+            im = im.rotate(random.uniform(-30, 30), Image.NEAREST, expand=True)
 
             return im
 
@@ -158,6 +178,7 @@ class ImageCaptchaEnhanced(_Captcha):
         width = max(text_width, self._width)
         image = image.resize((width, self._height))
 
+        # draw the line cross the bottom
         average = int(text_width / len(chars))
         rand_l = int(0.4 * average)
         rand_r = int(0.2 * average)
@@ -184,15 +205,60 @@ class ImageCaptchaEnhanced(_Captcha):
         return image
 
 
+    
+    def barrel_distort_waving(self, im:Image, main_color, bg_color, A, B, C, D, X, Y):
+        """
+        Do barrel distort and waving the captcha
+        Using the equation: A^3*r + B^2*r + C*r + D
+        X and Y are the center of the distortion
+        """
+        alpha = random.uniform(0.8,1.2)
+        beta = random.randint(-90,90)
+        
+        wave_shift = lambda line: alpha * (self._width / 30.0) * np.sin( np.pi * (line+beta) / self._height )
+        
+        m = np.asarray(im).transpose(1,0)
+        for row_index in range(self._width):
+            m[row_index] = np.roll(m[row_index], int(wave_shift(row_index)))
+        m = m.transpose(1,0)
+                
+        xv,yv = np.meshgrid(np.float32(np.arange(self._width)),np.float32(np.arange(self._height)))
+
+        x_c = self._width/2 if X is None else X
+        y_c = self._height/2 if Y is None else Y
+        xv = (xv - x_c) / self._width
+        yv = (yv - y_c) / self._height
+        radius = np.sqrt(xv**2 + yv**2)
+
+        # implement the eqation on "relative radious"
+        m_r = A*radius**3 + B*radius**2 + C*radius + D
+        
+        xv = xv * m_r * self._width + x_c
+        yv = yv * m_r * self._height + y_c
+        
+        xv = xv.astype(np.int16)       
+        yv = yv.astype(np.int16)
+        
+        m = map_coordinates(m, [yv.ravel(),xv.ravel()])
+        
+        m = np.reshape(m,(self._height,self._width))
+        main_color = np.array(main_color)
+        bg_color = np.array(bg_color)
+        m = np.array([[main_color if i else bg_color for i in m_0] for m_0 in m]).astype(np.uint8)
+        im = Image.fromarray(m)
+        return  im
+
 
     def generate_image(self, chars):
-        """Generate the image of the given characters.
+        """
+        Generate the image of the given characters.
 
-        :param chars: text to be generated.
+        chars: text to be generated.
         """
         background = random_color(238, 255)
         color = random_color(10,200)
         im = self.create_captcha_image(chars)
+        im = self.barrel_distort_waving(im = im, main_color=color, bg_color=background, A = 0, B = 0.2, C = 0.2, D = 0.9, X = random.randint(int (self._width * 2 / 5), int (self._width * 3 / 5)), Y = random.randint(int (self._height * 2 / 5), int (self._height * 3 / 5)))
         self.create_noise_dots(im, color)
         self.create_noise_curve(im, color)
         im = im.filter(ImageFilter.SMOOTH)

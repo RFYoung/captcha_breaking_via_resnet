@@ -4,6 +4,9 @@ import torch
 import torch.nn as nn
 
 class CnnModel(nn.Module):
+    '''
+    The VGG-Like model
+    '''
     def __init__(self, char_classes,str_len ,input_shape=(3, 64, 128)):
         super(CnnModel, self).__init__()
         channels = [32, 64, 128, 256, 256]
@@ -12,6 +15,7 @@ class CnnModel(nn.Module):
         features_modules = OrderedDict()
         self.str_len = str_len
 
+        # the blocks to do feature extraction
         in_channel = input_shape[0]
         for block, (n_channel) in enumerate(channels):
             features_modules[f'conv1-{block}'] = nn.Conv2d(in_channel, n_channel, cnn_kernel, padding=1)
@@ -26,6 +30,7 @@ class CnnModel(nn.Module):
 
         self.features = nn.Sequential(features_modules)
 
+        # fully connected layers at the bottom
         self.classifier = nn.Sequential(
             nn.Linear(in_features=channels[-1]*2*6, out_features=2048),
             nn.ReLU(inplace=True),

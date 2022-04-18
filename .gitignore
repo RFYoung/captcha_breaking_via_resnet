@@ -3,4 +3,3 @@ test/
 .vscode/
 __pycache__/
 log/*
-font/*
